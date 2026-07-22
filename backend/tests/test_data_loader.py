@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pandas as pd
 import pytest
 
@@ -26,8 +28,8 @@ def test_matches_csv_contains_expected_match_count():
     assert len(datasets["matches"]) == EXPECTED_MATCH_COUNT
 
 
-def test_missing_csv_file_has_clear_error(tmp_path):
-    missing_file = tmp_path / "missing.csv"
+def test_missing_csv_file_has_clear_error():
+    missing_file = Path("missing.csv")
 
     with pytest.raises(FileNotFoundError, match="Required CSV file is missing"):
         load_csv_file(missing_file)
