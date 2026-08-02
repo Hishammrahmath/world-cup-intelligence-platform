@@ -70,3 +70,22 @@ def test_scheduled_match_endpoints_return_empty_lists_where_expected():
     assert events_response.json()["events"] == []
     assert stats_response.json()["stats"] == []
     assert turning_points_response.json()["turning_points"] == []
+
+
+def test_match_teams_endpoint_returns_two_teams():
+    response = client.get("/matches/1/teams")
+
+    assert response.status_code == 200
+    assert len(response.json()["teams"]) == 2
+
+
+def test_match_summary_endpoint_returns_factual_explanations():
+    response = client.get("/matches/1/summary")
+    summary = response.json()["summary"]
+
+    assert response.status_code == 200
+    assert "facts" in summary
+    assert "fan_explanation" in summary
+    assert "player_explanation" in summary
+    assert "coach_explanation" in summary
+    assert summary["limits"]

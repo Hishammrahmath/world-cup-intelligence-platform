@@ -1,0 +1,28 @@
+{
+  "name": "world-cup-intelligence-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "@types/plotly.js": "^3.0.7",
+    "lucide-react": "^0.536.0",
+    "next": "15.5.22",
+    "plotly.js-dist-min": "^3.1.0",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "react-plotly.js": "^2.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.2.0",
+    "@types/react": "^19.1.9",
+    "@types/react-dom": "^19.1.7",
+    "@types/react-plotly.js": "^2.6.4",
+    "eslint": "^9.32.0",
+    "eslint-config-next": "15.5.22",
+    "typescript": "^5.9.2"
+  }
+}

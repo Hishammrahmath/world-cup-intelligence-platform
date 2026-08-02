@@ -6,7 +6,9 @@ from app.services.match_service import (
     get_match_by_id,
     get_match_events,
     get_match_team_stats,
+    get_match_teams,
 )
+from app.services.match_summary import build_match_summary
 from app.services.momentum_engine import calculate_match_momentum
 from app.services.turning_points import find_match_turning_points
 
@@ -41,6 +43,16 @@ def get_match(match_id: int) -> dict:
         raise _not_found_error(match_id)
 
     return {"match": _series_to_record(match)}
+
+
+@router.get("/{match_id}/teams")
+def list_match_teams(match_id: int) -> dict:
+    try:
+        teams = get_match_teams(match_id)
+    except ValueError:
+        raise _not_found_error(match_id)
+
+    return {"teams": _dataframe_to_records(teams)}
 
 
 @router.get("/{match_id}/events")
@@ -81,3 +93,13 @@ def get_match_turning_points(match_id: int) -> dict:
         raise _not_found_error(match_id)
 
     return {"turning_points": turning_points}
+
+
+@router.get("/{match_id}/summary")
+def get_match_summary(match_id: int) -> dict:
+    try:
+        summary = build_match_summary(match_id)
+    except ValueError:
+        raise _not_found_error(match_id)
+
+    return {"summary": summary}
