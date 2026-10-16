@@ -1,102 +1,82 @@
-# World Cup Intelligence Platform
+# MatchIQ
 
-A web application for explainable World Cup 2026 match intelligence.
+**Explainable momentum analytics for all 104 FIFA World Cup 2026 matches.**
 
-The platform helps fans, players, and coaches review matches using:
+Live demo: _coming soon_
 
-- match details and scores
-- team statistics
-- event timelines
-- momentum graphs
-- turning point detection
-- factual match explanations
+Box scores show who had the ball. MatchIQ shows *when* a match swung. It turns
+raw match events into a minute-by-minute momentum score for each team, detects
+the turning points where momentum changed most, and explains each match using
+only facts it can calculate.
 
-## Current Status
+## What it does
 
-Completed phases:
+- **Momentum model.** Each event gets a weight (goal +5, shot on target +2,
+  corner +1, red card −4, and so on). Momentum is the rolling sum over a
+  5-minute window, per team, per minute. See [docs/MOMENTUM_MODEL.md](docs/MOMENTUM_MODEL.md).
+- **Turning-point detection.** Flags any 5-minute stretch where a team's
+  momentum rises by 5 or more, links the match events within 2 minutes of it,
+  and removes overlapping detections.
+- **Fact-only explanations.** Fan, player, and coach views summarize each match
+  without inventing causes: momentum shifted *near* an event, not *because of* it.
+- **Dashboard.** Interactive Plotly momentum chart, team stats, turning points,
+  and an event timeline for every match.
 
-- Phase 1: Data Loader
-- Phase 2: Data Dictionary
-- Phase 3: Match Service
-- Phase 4: Momentum Engine
-- Phase 5: Turning Points
-- Phase 6: FastAPI Backend
-- Phase 7: Frontend Match Page
-- Phase 8: Fan, Player, and Coach Views
-- Phase 9: Factual Explanation Layer
+## Stack
 
-## Backend
-
-From the project root:
-
-```powershell
-cd backend
-python -m pip install -r requirements.txt
-python -m uvicorn app.main:app --reload
-```
-
-Backend docs:
-
-```text
-http://127.0.0.1:8000/docs
-```
-
-Run backend tests:
-
-```powershell
-cd backend
-python -m pytest tests
-```
-
-## Frontend
-
-Open a second terminal from the project root:
-
-```powershell
-cd frontend
-npm.cmd install
-npm.cmd run dev
-```
-
-Frontend app:
-
-```text
-http://127.0.0.1:3000
-```
-
-PowerShell may block plain `npm`, so use `npm.cmd` on this machine.
+| Layer | Tools |
+| --- | --- |
+| Data and modeling | Python, pandas |
+| API | FastAPI, tested with pytest |
+| Frontend | Next.js, React, TypeScript, Plotly |
+| Hosting | Vercel (static data export) |
 
 ## Data
 
-Raw CSV files should be placed in:
+Four related CSV files from the [FIFA World Cup 2026 Dataset](https://github.com/mominullptr/FIFA-World-Cup-2026-Dataset) (CC0): `teams.csv` (48
+teams), `matches.csv` (104 matches), `match_events.csv`, and
+`match_team_stats.csv`. Column definitions are in
+[docs/DATA_DICTIONARY.md](docs/DATA_DICTIONARY.md). Raw CSVs go in `data/raw/`
+and are not committed.
 
-```text
-data/raw/
+## Run it locally
+
+Backend API:
+
+```bash
+cd backend
+python -m pip install -r requirements.txt
+python -m uvicorn app.main:app --reload    # docs at http://127.0.0.1:8000/docs
+python -m pytest tests
 ```
 
-Required files:
+Frontend (reads the exported JSON in `frontend/public/data/`):
 
-```text
-teams.csv
-matches.csv
-match_events.csv
-match_team_stats.csv
+```bash
+cd frontend
+npm install
+npm run dev                                # http://localhost:3000
 ```
 
-Raw CSV files are ignored by Git. The folder structure is kept with `.gitkeep` files.
+To point the frontend at the live API instead, set
+`NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8000`.
 
-## Explanation Rule
+## Refresh the hosted data
 
-The explanation layer only uses facts calculated by the app. It should not invent events, players, statistics, tactics, or causes.
+The hosted site needs no backend. After changing the model, regenerate the
+static JSON and commit it:
 
-Correct wording:
-
-```text
-Momentum shifted near an event.
+```bash
+cd backend
+python -m scripts.export_static
 ```
 
-Avoid:
+## Explanation rule
+
+The explanation layer only uses facts calculated by the app. It never invents
+events, players, statistics, tactics, or causes.
 
 ```text
-Momentum shifted because of an event.
+Correct: Momentum shifted near an event.
+Avoid:   Momentum shifted because of an event.
 ```

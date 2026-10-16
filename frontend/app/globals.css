@@ -80,24 +80,33 @@ h2 {
 }
 
 .matchSearch {
-  display: grid;
-  grid-template-columns: 18px 84px auto;
+  display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px;
+  padding: 8px 10px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: var(--surface-2);
+  background: var(--surface);
+  max-width: 100%;
 }
 
-.matchSearch input {
-  width: 84px;
+.matchSearch select {
+  width: min(420px, 70vw);
+  max-width: 100%;
   border: 1px solid var(--line);
   border-radius: 6px;
   padding: 8px;
+  font: inherit;
+  background: var(--surface);
+  color: inherit;
 }
 
-.matchSearch button,
+.tagline {
+  margin: 6px 0 0;
+  color: var(--muted, #5b6470);
+  max-width: 560px;
+}
+
 .modeTabs button {
   display: inline-flex;
   align-items: center;

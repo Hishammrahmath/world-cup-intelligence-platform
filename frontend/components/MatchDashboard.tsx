@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Activity, Brain, ClipboardList, Dumbbell, RefreshCw, Search } from "lucide-react";
-import { getMatchDashboard, type MatchDashboardData } from "@/lib/api";
+import { Activity, Brain, ClipboardList, Dumbbell, Search } from "lucide-react";
+import { getMatchDashboard, getMatchList, type MatchDashboardData, type MatchListItem } from "@/lib/api";
 import EventTimeline from "./EventTimeline";
 import MomentumChart from "./MomentumChart";
 import StatsTable from "./StatsTable";
@@ -15,12 +15,23 @@ type Props = {
 };
 
 export default function MatchDashboard({ initialMatchId }: Props) {
-  const [matchIdInput, setMatchIdInput] = useState(String(initialMatchId));
+  const [matchList, setMatchList] = useState<MatchListItem[]>([]);
   const [activeMatchId, setActiveMatchId] = useState(initialMatchId);
   const [activeMode, setActiveMode] = useState<ViewMode>("fan");
   const [data, setData] = useState<MatchDashboardData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fromUrl = Number(new URLSearchParams(window.location.search).get("match"));
+    if (Number.isInteger(fromUrl) && fromUrl > 0) {
+      setActiveMatchId(fromUrl);
+    }
+
+    getMatchList()
+      .then(setMatchList)
+      .catch(() => setMatchList([]));
+  }, []);
 
   useEffect(() => {
     let isCurrent = true;
@@ -57,15 +68,11 @@ export default function MatchDashboard({ initialMatchId }: Props) {
   const homeTeam = data ? teamsById.get(data.match.home_team_id) : null;
   const awayTeam = data ? teamsById.get(data.match.away_team_id) : null;
 
-  function loadMatch() {
-    const parsedMatchId = Number(matchIdInput);
-
-    if (!Number.isInteger(parsedMatchId) || parsedMatchId < 1) {
-      setError("Enter a valid match id.");
-      return;
-    }
-
-    setActiveMatchId(parsedMatchId);
+  function selectMatch(matchId: number) {
+    setActiveMatchId(matchId);
+    const url = new URL(window.location.href);
+    url.searchParams.set("match", String(matchId));
+    window.history.replaceState(null, "", url);
   }
 
   const explanation = data ? getModeExplanation(activeMode, data) : "";
@@ -74,24 +81,27 @@ export default function MatchDashboard({ initialMatchId }: Props) {
     <main className="appShell">
       <section className="topBar">
         <div>
-          <p className="eyebrow">World Cup 2026 Intelligence</p>
-          <h1>Match Intelligence Dashboard</h1>
+          <p className="eyebrow">MatchIQ · FIFA World Cup 2026</p>
+          <h1>Match Momentum Dashboard</h1>
+          <p className="tagline">
+            Event-weighted momentum, turning points, and fact-only explanations for all 104 matches.
+          </p>
         </div>
-        <div className="matchSearch" aria-label="Match search">
+        <label className="matchSearch">
           <Search size={18} />
-          <input
-            value={matchIdInput}
-            onChange={(event) => setMatchIdInput(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") loadMatch();
-            }}
-            aria-label="Match ID"
-          />
-          <button onClick={loadMatch} type="button">
-            <RefreshCw size={16} />
-            Load
-          </button>
-        </div>
+          <select
+            value={activeMatchId}
+            onChange={(event) => selectMatch(Number(event.target.value))}
+            aria-label="Choose a match"
+          >
+            {matchList.length === 0 && <option value={activeMatchId}>Match {activeMatchId}</option>}
+            {matchList.map((item) => (
+              <option key={item.match_id} value={item.match_id}>
+                {formatMatchOption(item)}
+              </option>
+            ))}
+          </select>
+        </label>
       </section>
 
       {error && <div className="statusBanner error">{error}</div>}
@@ -193,3 +203,11 @@ function getModeExplanation(mode: ViewMode, data: MatchDashboardData) {
   return data.summary.coach_explanation;
 }
 
+
+function formatMatchOption(item: MatchListItem) {
+  if (!item.home_team || !item.away_team) {
+    return `Match ${item.match_id} · ${item.date}`;
+  }
+
+  return `#${item.match_id} · ${item.home_team} ${item.home_score}–${item.away_score} ${item.away_team} · ${item.date}`;
+}

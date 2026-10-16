@@ -1,4 +1,6 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://127.0.0.1:8000";
+// When NEXT_PUBLIC_API_BASE_URL is set, the dashboard calls the FastAPI backend.
+// Otherwise it reads the static JSON exported by backend/scripts/export_static.py.
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export type Match = {
   match_id: number;
@@ -79,6 +81,18 @@ export type MatchSummary = {
   limits: string[];
 };
 
+export type MatchListItem = {
+  match_id: number;
+  date: string;
+  home_team: string | null;
+  home_code: string | null;
+  away_team: string | null;
+  away_code: string | null;
+  home_score: number;
+  away_score: number;
+  turning_point_count: number;
+};
+
 export type MatchDashboardData = {
   match: Match;
   teams: Team[];
@@ -89,8 +103,8 @@ export type MatchDashboardData = {
   summary: MatchSummary;
 };
 
-async function fetchJson<T>(path: string): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${path}`, { cache: "no-store" });
+async function fetchJson<T>(url: string): Promise<T> {
+  const response = await fetch(url, { cache: API_BASE_URL ? "no-store" : "force-cache" });
 
   if (!response.ok) {
     throw new Error(`Request failed: ${response.status} ${response.statusText}`);
@@ -99,15 +113,57 @@ async function fetchJson<T>(path: string): Promise<T> {
   return response.json() as Promise<T>;
 }
 
+export async function getMatchList(): Promise<MatchListItem[]> {
+  if (!API_BASE_URL) {
+    const data = await fetchJson<{ matches: MatchListItem[] }>("/data/matches.json");
+    return data.matches;
+  }
+
+  const { matches } = await fetchJson<{ matches: Match[] }>(`${API_BASE_URL}/matches`);
+  return matches.map((match) => ({
+    match_id: match.match_id,
+    date: match.date,
+    home_team: null,
+    home_code: null,
+    away_team: null,
+    away_code: null,
+    home_score: match.home_score,
+    away_score: match.away_score,
+    turning_point_count: 0,
+  }));
+}
+
 export async function getMatchDashboard(matchId: number): Promise<MatchDashboardData> {
+  if (!API_BASE_URL) {
+    const data = await fetchJson<{
+      match: Match;
+      teams: Team[];
+      events: Event[];
+      stats: TeamStats[];
+      momentum: MomentumPoint[];
+      turning_points: TurningPoint[];
+      summary: MatchSummary;
+    }>(`/data/matches/${matchId}.json`);
+
+    return {
+      match: data.match,
+      teams: data.teams,
+      events: data.events,
+      stats: data.stats,
+      momentum: data.momentum,
+      turningPoints: data.turning_points,
+      summary: data.summary,
+    };
+  }
+
   const [match, teams, events, stats, momentum, turningPoints, summary] = await Promise.all([
-    fetchJson<{ match: Match }>(`/matches/${matchId}`),
-    fetchJson<{ teams: Team[] }>(`/matches/${matchId}/teams`),
-    fetchJson<{ events: Event[] }>(`/matches/${matchId}/events`),
-    fetchJson<{ stats: TeamStats[] }>(`/matches/${matchId}/stats`),
-    fetchJson<{ momentum: MomentumPoint[] }>(`/matches/${matchId}/momentum`),
-    fetchJson<{ turning_points: TurningPoint[] }>(`/matches/${matchId}/turning-points`),
-    fetchJson<{ summary: MatchSummary }>(`/matches/${matchId}/summary`),
+    fetchJson<{ match: Match }>(`${API_BASE_URL}/matches/${matchId}`),
+    fetchJson<{ teams: Team[] }>(`${API_BASE_URL}/matches/${matchId}/teams`),
+    fetchJson<{ events: Event[] }>(`${API_BASE_URL}/matches/${matchId}/events`),
+    fetchJson<{ stats: TeamStats[] }>(`${API_BASE_URL}/matches/${matchId}/stats`),
+    fetchJson<{ momentum: MomentumPoint[] }>(`${API_BASE_URL}/matches/${matchId}/momentum`),
+    fetchJson<{ turning_points: TurningPoint[] }>(`${API_BASE_URL}/matches/${matchId}/turning-points`),
+    fetchJson<{ summary: MatchSummary }>(`${API_BASE_URL}/matches/${matchId}/summary`),
   ]);
 
   return {
