@@ -2,7 +2,7 @@
 
 **Explainable momentum analytics for all 104 FIFA World Cup 2026 matches.**
 
-Live demo: _coming soon_
+**Live demo: [matchiq-nine.vercel.app](https://matchiq-nine.vercel.app)**
 
 Box scores show who had the ball. MatchIQ shows *when* a match swung. It turns
 raw match events into a minute-by-minute momentum score for each team, detects
